@@ -27,7 +27,6 @@ namespace LidarTestGUI
 
         //更新速度图和点云图绘制定时器
         private System.Windows.Forms.Timer UpdateSpeedPlotTimer = new System.Windows.Forms.Timer() { Interval = 50, Enabled = true };
-        private System.Windows.Forms.Timer UpdatePosPlotTimer = new System.Windows.Forms.Timer() { Interval = 200, Enabled = true };
 
         //存储点云绘图坐标及角度
         private static List<double> positionX = new List<double>();
@@ -69,12 +68,6 @@ namespace LidarTestGUI
             var abc = fpPosition.Plot.Add.ScatterPoints(positionX, positionY);
             fpPosition.Plot.Axes.SetLimitsX(-2000, 2000);
             fpPosition.Plot.Axes.SetLimitsY(-2000, 2000);
-
-            //UpdatePosPlotTimer.Tick += (s, e) =>
-            //{
-                //fpPosition.Plot.Axes.AutoScale();
-                //fpPosition.Refresh();
-            //};
 
             comboBox_sp.DataSource = SerialPort.GetPortNames();
             comboBox_sp.SelectedIndex = 0;
