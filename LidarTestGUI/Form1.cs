@@ -70,7 +70,7 @@ namespace LidarTestGUI
             fpPosition.Plot.Axes.SetLimitsY(-2000, 2000);
 
             comboBox_sp.DataSource = SerialPort.GetPortNames();
-            comboBox_sp.SelectedIndex = 0;
+            //comboBox_sp.SelectedIndex = 0;
 
             LidarSerialPort = new SerialPort();
 
