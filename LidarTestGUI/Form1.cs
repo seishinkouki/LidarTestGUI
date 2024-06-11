@@ -243,15 +243,16 @@ namespace LidarTestGUI
                 //quality意义不明, 临时过滤异常大的值
                 //if (MeasurePointDistance[index] < 15000)
                 //{
-                if (MeasurePointQuality[index] != 0)
+                if(MeasurePointQuality[index] == 0)
                 {
-                    //记录新绘制的点
-                    lastAngle.Add(MeasurePointAngle[index]);
-                    //极坐标转直角坐标
-                    var c = Complex.FromPolarCoordinates(MeasurePointDistance[index], -MeasurePointAngle[index] * Math.PI / 180);
-                    xs.Add(c.Real);
-                    ys.Add(c.Imaginary);
+                    MeasurePointDistance[index] = 0;
                 }
+                //记录新绘制的点
+                lastAngle.Add(MeasurePointAngle[index]);
+                //极坐标转直角坐标
+                var c = Complex.FromPolarCoordinates(MeasurePointDistance[index], -MeasurePointAngle[index] * Math.PI / 180);
+                xs.Add(c.Real);
+                ys.Add(c.Imaginary);
             }
             positionX.AddRange(xs);
             positionY.AddRange(ys);
