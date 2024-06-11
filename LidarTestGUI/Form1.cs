@@ -42,6 +42,7 @@ namespace LidarTestGUI
         private static List<double> ys = new List<double>();
 
         private static int RefreshPlotCounter = 0;
+        private static int FrameIndexInCycle = -1;
         public Form1()
         {
             InitializeComponent();
@@ -63,8 +64,12 @@ namespace LidarTestGUI
             this.groupBox2.Controls.Add(fpPosition);
             fpPosition.Plot.Axes.SquareUnits();
 
-            positionX.Add(0.0);
-            positionY.Add(0.0);
+            for (int i = 0; i < 560; i++)
+            {
+                positionX.Add(0);
+                positionY.Add(0);
+            }
+            
             var abc = fpPosition.Plot.Add.ScatterPoints(positionX, positionY);
             fpPosition.Plot.Axes.SetLimitsX(-2000, 2000);
             fpPosition.Plot.Axes.SetLimitsY(-2000, 2000);
@@ -131,10 +136,10 @@ namespace LidarTestGUI
 
                 byte[] frame = _buffer.GetRange(frameStartIndex, _frameLength).ToArray();
 
-                if (CheckFrameCheckSum(frame))
-                {
+                //if (CheckFrameCheckSum(frame))
+                //{
                     ProcessFrame(frame);
-                }
+                //}
 
                 _buffer.RemoveRange(0, frameStartIndex + _frameLength);
             }
@@ -148,6 +153,15 @@ namespace LidarTestGUI
             var startAngle = (frameData[7] << 8 | frameData[6]) / 64.0 - 640.0;
             var endAngle = (frameData[57] << 8 | frameData[56]) / 64.0 - 640.0;
 
+            //8->0XA2FF-0XA000/64
+            if(startAngle < 11.9)
+            {
+                FrameIndexInCycle = 0;
+            }
+            if(FrameIndexInCycle == -1)
+            {
+                return;
+            }
             //角度间距
             //跨0度的点
             if (endAngle < startAngle)
@@ -157,56 +171,56 @@ namespace LidarTestGUI
             var spaceAngle = (endAngle - startAngle) / 15.0;
 
             //删除旧的点
-            if (lastAngle.Count > 0)
-            {
-                if (startAngle < endAngle)
-                {
-                    var temp = lastAngle.Where(o => o >= startAngle && o <= endAngle).ToList();
-                    if (temp.Count > 0)
-                    {
-                        var left = lastAngle.IndexOf(temp[0]);
-                        var count = temp.Count;
-                        if (left != -1)
-                        {
-                            positionX.RemoveRange(left, count);
-                            positionY.RemoveRange(left, count);
-                            lastAngle.RemoveRange(left, count);
-                        }
-                    }
+            //if (lastAngle.Count > 0)
+            //{
+            //    if (startAngle < endAngle)
+            //    {
+            //        var temp = lastAngle.Where(o => o >= startAngle && o <= endAngle).ToList();
+            //        if (temp.Count > 0)
+            //        {
+            //            var left = lastAngle.IndexOf(temp[0]);
+            //            var count = temp.Count;
+            //            if (left != -1)
+            //            {
+            //                positionX.RemoveRange(left, count);
+            //                positionY.RemoveRange(left, count);
+            //                lastAngle.RemoveRange(left, count);
+            //            }
+            //        }
 
-                }
-                else
-                {
-                    //跨0度左侧
-                    var temp1 = lastAngle.Where(o => o >= startAngle && o < 360).ToList();
-                    if (temp1.Count > 0)
-                    {
-                        var left1 = lastAngle.IndexOf(temp1[0]);
-                        var count1 = temp1.Count;
-                        if (left1 != -1)
-                        {
-                            positionX.RemoveRange(left1, count1);
-                            positionY.RemoveRange(left1, count1);
-                            lastAngle.RemoveRange(left1, count1);
-                        }
-                    }
+            //    }
+            //    else
+            //    {
+            //        //跨0度左侧
+            //        var temp1 = lastAngle.Where(o => o >= startAngle && o < 360).ToList();
+            //        if (temp1.Count > 0)
+            //        {
+            //            var left1 = lastAngle.IndexOf(temp1[0]);
+            //            var count1 = temp1.Count;
+            //            if (left1 != -1)
+            //            {
+            //                positionX.RemoveRange(left1, count1);
+            //                positionY.RemoveRange(left1, count1);
+            //                lastAngle.RemoveRange(left1, count1);
+            //            }
+            //        }
 
-                    //跨0度右侧
-                    var temp2 = lastAngle.Where(o => o >= 0 && o <= endAngle).ToList();
-                    if (temp2.Count > 0)
-                    {
-                        var left2 = lastAngle.IndexOf(temp2[0]);
-                        var count2 = temp2.Count;
-                        if (left2 != -1)
-                        {
-                            positionX.RemoveRange(left2, count2);
-                            positionY.RemoveRange(left2, count2);
-                            lastAngle.RemoveRange(left2, count2);
-                        }
-                    }
+            //        //跨0度右侧
+            //        var temp2 = lastAngle.Where(o => o >= 0 && o <= endAngle).ToList();
+            //        if (temp2.Count > 0)
+            //        {
+            //            var left2 = lastAngle.IndexOf(temp2[0]);
+            //            var count2 = temp2.Count;
+            //            if (left2 != -1)
+            //            {
+            //                positionX.RemoveRange(left2, count2);
+            //                positionY.RemoveRange(left2, count2);
+            //                lastAngle.RemoveRange(left2, count2);
+            //            }
+            //        }
 
-                }
-            }
+            //    }
+            //}
 
             //16个测量点, 角度插值
             for (int index = 0; index < 16; index++)
@@ -231,8 +245,8 @@ namespace LidarTestGUI
             });
 
             //更新点云数据
-            xs.Clear();
-            ys.Clear();
+            //xs.Clear();
+            //ys.Clear();
             for (int index = 0; index < 16; index++)
             {
                 //quality意义不明, 临时过滤异常大的值
@@ -246,13 +260,20 @@ namespace LidarTestGUI
                 lastAngle.Add(MeasurePointAngle[index]);
                 //极坐标转直角坐标
                 var c = Complex.FromPolarCoordinates(MeasurePointDistance[index], -MeasurePointAngle[index] * Math.PI / 180);
-                xs.Add(c.Real);
-                ys.Add(c.Imaginary);
+                //xs.Add(c.Real);
+                //ys.Add(c.Imaginary);
+                positionX[FrameIndexInCycle * 16 + index] = c.Real;
+                positionY[FrameIndexInCycle * 16 + index] = c.Imaginary;
             }
-            positionX.AddRange(xs);
-            positionY.AddRange(ys);
+            //positionX.AddRange(xs);
+            //positionY.AddRange(ys);
             RefreshPlotCounter += 1;
-            if (RefreshPlotCounter > 35)
+            FrameIndexInCycle += 1;
+            if(FrameIndexInCycle > 34)
+            {
+                FrameIndexInCycle = -1;
+            }
+            if (RefreshPlotCounter > 34)
             {
                 RefreshPlotCounter = 0;
                 try
