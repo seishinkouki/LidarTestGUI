@@ -42,7 +42,7 @@ namespace LidarTestGUI
         private static List<double> ys = new List<double>();
 
         private static int RefreshPlotCounter = 0;
-        private static int FrameIndexInCycle = -1;
+        //private static int FrameIndexInCycle = -1;
         public Form1()
         {
             InitializeComponent();
@@ -154,14 +154,14 @@ namespace LidarTestGUI
             var endAngle = (frameData[57] << 8 | frameData[56]) / 64.0 - 640.0;
 
             //8->0XA2FF-0XA000/64
-            if(startAngle < 11.9)
-            {
-                FrameIndexInCycle = 0;
-            }
-            if(FrameIndexInCycle == -1)
-            {
-                return;
-            }
+            //if(startAngle < 11.9)
+            //{
+            //    FrameIndexInCycle = 0;
+            //}
+            //if(FrameIndexInCycle == -1)
+            //{
+            //    return;
+            //}
             //角度间距
             //跨0度的点
             if (endAngle < startAngle)
@@ -262,17 +262,17 @@ namespace LidarTestGUI
                 var c = Complex.FromPolarCoordinates(MeasurePointDistance[index], -MeasurePointAngle[index] * Math.PI / 180);
                 //xs.Add(c.Real);
                 //ys.Add(c.Imaginary);
-                positionX[FrameIndexInCycle * 16 + index] = c.Real;
-                positionY[FrameIndexInCycle * 16 + index] = c.Imaginary;
+                positionX[RefreshPlotCounter * 16 + index] = c.Real;
+                positionY[RefreshPlotCounter * 16 + index] = c.Imaginary;
             }
             //positionX.AddRange(xs);
             //positionY.AddRange(ys);
             RefreshPlotCounter += 1;
-            FrameIndexInCycle += 1;
-            if(FrameIndexInCycle > 34)
-            {
-                FrameIndexInCycle = -1;
-            }
+            //FrameIndexInCycle += 1;
+            //if(FrameIndexInCycle > 34)
+            //{
+            //    FrameIndexInCycle = -1;
+            //}
             if (RefreshPlotCounter > 34)
             {
                 RefreshPlotCounter = 0;
