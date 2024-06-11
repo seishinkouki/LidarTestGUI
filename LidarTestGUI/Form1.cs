@@ -74,7 +74,7 @@ namespace LidarTestGUI
 
             LidarSerialPort = new SerialPort();
 
-            LidarSerialPort.PortName = comboBox_sp.SelectedItem.ToString();
+            //LidarSerialPort.PortName = comboBox_sp.SelectedItem.ToString();
             LidarSerialPort.BaudRate = 230400;
 
         }
@@ -93,7 +93,7 @@ namespace LidarTestGUI
                 }
                 ProcessBuffer();
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
 
             }
@@ -131,9 +131,10 @@ namespace LidarTestGUI
 
                 byte[] frame = _buffer.GetRange(frameStartIndex, _frameLength).ToArray();
 
-
-                ProcessFrame(frame);
-
+                if (CheckFrameCheckSum(frame))
+                {
+                    ProcessFrame(frame);
+                }
 
                 _buffer.RemoveRange(0, frameStartIndex + _frameLength);
             }
@@ -210,7 +211,9 @@ namespace LidarTestGUI
             //16个测量点, 角度插值
             for (int index = 0; index < 16; index++)
             {
-                MeasurePointDistance[index] = frameData[9 + 3 * index] << 8 | frameData[8 + 3 * index];
+                //MeasurePointDistance[index] = frameData[9 + 3 * index] << 8 | frameData[8 + 3 * index];
+                //https://github.com/camsense/SDK_V3.0/blob/17e0264302e2ca4cf14d5402af7437d16a37ab95/src/base/ReadParsePackage.cpp#L343
+                MeasurePointDistance[index] = (frameData[9 + 3 * index] & 0x3F) << 8 | frameData[8 + 3 * index];
                 MeasurePointQuality[index] = frameData[10 + 3 * index];
                 MeasurePointAngle[index] = startAngle + spaceAngle * index;
                 //跨0度的点
@@ -233,7 +236,9 @@ namespace LidarTestGUI
             for (int index = 0; index < 16; index++)
             {
                 //quality意义不明, 临时过滤异常大的值
-                if (MeasurePointDistance[index] < 15000)
+                //if (MeasurePointDistance[index] < 15000)
+                //{
+                if (MeasurePointQuality[index] != 0)
                 {
                     //记录新绘制的点
                     lastAngle.Add(MeasurePointAngle[index]);
@@ -246,7 +251,7 @@ namespace LidarTestGUI
             positionX.AddRange(xs);
             positionY.AddRange(ys);
             RefreshPlotCounter += 1;
-            if(RefreshPlotCounter > 35)
+            if (RefreshPlotCounter > 35)
             {
                 RefreshPlotCounter = 0;
                 try
@@ -255,7 +260,7 @@ namespace LidarTestGUI
                 }
                 catch
                 {
-                }    
+                }
             }
         }
 
@@ -264,6 +269,7 @@ namespace LidarTestGUI
             if (button1.Text == "打开")
             {
                 _cts = new CancellationTokenSource();
+                LidarSerialPort.PortName = comboBox_sp.SelectedItem.ToString();
                 LidarSerialPort.Open();
                 LidarSerialPort.DataReceived += LidarSerialPort_DataReceived;
                 button1.Text = "关闭";
@@ -289,6 +295,26 @@ namespace LidarTestGUI
         {
             Form2 frm2 = new Form2();
             frm2.ShowDialog();
+        }
+        private static bool CheckFrameCheckSum(byte[] frameData)
+        {
+            var len = frameData.Length;
+            int[] temp = new int[len / 2];
+            for (int i = 0; i < len / 2; i++)
+            {
+                temp[i] = frameData[2 * i] + (frameData[2 * i + 1] << 8);
+            }
+
+            int chk32 = 0;
+            for (int i = 0; i < (len / 2 - 1); i++)
+            {
+                chk32 = (chk32 << 1) + temp[i];
+            }
+
+            int checksum_target = (chk32 & 0x7FFF) + (chk32 >> 15);
+            checksum_target = checksum_target & 0x7FFF;
+
+            return checksum_target == temp[len / 2 - 1];
         }
     }
 }
