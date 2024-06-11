@@ -199,9 +199,14 @@ namespace LidarTestGUI
                         var count2 = temp2.Count;
                         if (left2 != -1)
                         {
-                            positionX.RemoveRange(left2, count2);
-                            positionY.RemoveRange(left2, count2);
-                            lastAngle.RemoveRange(left2, count2);
+                            fpPosition.Plot.RenderManager.EnableRendering = false;
+                            while (!fpPosition.Plot.RenderManager.IsRendering)
+                            {
+                                positionX.RemoveRange(left2, count2);
+                                positionY.RemoveRange(left2, count2);
+                                lastAngle.RemoveRange(left2, count2);
+                            }
+                            fpPosition.Plot.RenderManager.EnableRendering = true;
                         }
                     }
 
